@@ -1,33 +1,72 @@
-# rrobin-server
+# Round Robin API
 
-The Node.js and Express API server for the Chore Management App.
 
-## Prerequisites
+## Run PostgreSQL locally on macOS
 
-*   [Node.js](https://nodejs.org/) (Installing Node.js automatically includes `npm`)
+Install PostgreSQL with Homebrew and start it as a background service:
 
-## Getting Started
+```bash
+brew install postgresql@16
+brew services start postgresql@16
+```
 
-1.  **Clone the repository**
-    ```bash
-    git clone <your-repo-url>
-    cd <your-backend-folder-name>
-    ```
+Create an application-specific database user and database:
 
-2.  **Install dependencies**
-    Install Express and standard dependencies:
-    ```bash
-    npm install
-    ```
-    Install `nodemon` as a developer dependency (automatically restarts the server on file changes):
-    ```bash
-    npm install --save-dev nodemon
-    ```
+```bash
+psql postgres
+```
 
-3.  **Start the development server**
-    ```bash
-    npm run dev
-    ```
+Then run these commands in the `psql` prompt:
 
-4.  **Verify the server**
-    Open [http://localhost:3000/api/test](http://localhost:3000/api/test) in your browser or a tool like Postman to verify the backend is listening.
+```sql
+CREATE ROLE roundrobin WITH LOGIN PASSWORD 'password123';
+CREATE DATABASE round_robin OWNER roundrobin;
+\q
+```
+
+If PostgreSQL is not available, confirm/restart its service:
+
+```bash
+brew services list
+brew services restart postgresql@16
+```
+
+## Local setup
+
+1. Copy `.env.example` to `.env`, then configure it for the local database:
+
+   ```env
+   DATABASE_URL="postgresql://roundrobin:password123@localhost:5432/round_robin?schema=public"
+   JWT_SECRET="replace-with-a-long-random-secret"
+   CLIENT_ORIGIN="http://localhost:5173"
+   PORT=3000
+   ```
+
+2. Generate Prisma's client and create tables directly from `schema.prisma`. This fresh-development setup does not create migration files:
+
+   ```bash
+   npm run prisma:generate
+   npx prisma db push
+   ```
+
+3. Start the API:
+
+   ```bash
+   npm run dev
+   ```
+
+`GET http://localhost:3000/api/health` confirms the API is running.
+
+## Authentication API
+
+| Method | Route | Request body |
+| --- | --- | --- |
+| POST | `/api/auth/signup` | `{ "username", "email", "password" }` |
+| POST | `/api/auth/signin` | `{ "login", "password" }` |
+| GET | `/api/auth/me` | `Authorization: Bearer <accessToken>` |
+
+Sign-up/sign-in return `{ user, accessToken }`. The short-lived JWT contains only the user id in `sub`; group role and authorization should always be read from the database, so role changes take effect immediately.
+
+## Client integration
+
+The client login forms call the auth endpoints at `VITE_API_URL` (default: `http://localhost:3000`) and store the returned access token for the development milestone. Include `Authorization: Bearer ${token}` on protected calls. Before production, move to an httpOnly secure cookie with refresh-token rotation to reduce XSS exposure.
