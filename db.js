@@ -1,9 +1,11 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { fileURLToPath } from 'url'
 
 // A tiny JSON-file "database" — no native code, works on any Node version.
 // Everything is stored in data.json next to the server. Fine for a dev
 // milestone; swap for a real database (Postgres, SQLite, etc.) later.
-const DB_FILE = 'data.json'
+// Resolve relative to this module, rather than the Vercel function's working directory.
+const DB_FILE = fileURLToPath(new URL('./data.json', import.meta.url))
 
 function load() {
   if (!existsSync(DB_FILE)) return { users: [], nextId: 1 }

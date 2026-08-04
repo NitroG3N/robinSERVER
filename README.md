@@ -37,7 +37,7 @@ Sign-up/sign-in return `{ user, accessToken }`. Passwords are hashed before they
 
 ## Deployment note
 
-Do not rely on `data.json` for a deployed Vercel API. Vercel serverless functions do not provide durable project-file writes, so new account creation will not persist reliably. Keep this storage only for local testing; switch to PostgreSQL/Prisma or another managed database before deploying authentication for real users.
+`data.json` is explicitly packaged with the Vercel function and read at runtime for the current test setup. It can supply pre-seeded accounts such as `anbu` / `testing123`, but Vercel file writes are not durable, so do not rely on deployed sign-ups persisting.
 
 ## Client integration
 
