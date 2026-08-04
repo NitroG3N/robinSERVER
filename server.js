@@ -1,13 +1,17 @@
-import 'dotenv/config'
+import dotenv from 'dotenv'
 import express from 'express'
 import cors from 'cors'
 import authRouter from './auth.js'
 
+// Local values live in the ignored .env.local file. In Vercel, its dashboard
+// provides process.env values and dotenv does not overwrite them.
+dotenv.config({ path: '.env.local' })
+
 const app = express()
 const PORT = process.env.PORT || 3000
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'https://rrobin-client-git-main-rrobin.vercel.app'
 
-// Allow the Vite dev server (on port 5173) to call this API.
+// Allow the deployed React client to call this API.
 app.use(cors({ origin: CLIENT_ORIGIN }))
 app.use(express.json())
 

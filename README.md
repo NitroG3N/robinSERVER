@@ -1,61 +1,29 @@
 # Round Robin API
 
 
-## Run PostgreSQL locally on macOS
+## Current user-testing storage
 
-Install PostgreSQL with Homebrew and start it as a background service:
+For this user-testing milestone, accounts are stored locally in `data.json` through `db.js`; Prisma and PostgreSQL are not active in the current server. This is appropriate only while running the API on a persistent local machine.
 
-```bash
-brew install postgresql@16
-brew services start postgresql@16
-```
+## Configuration
 
-Create an application-specific database user and database:
+The server loads its local configuration from the ignored `.env.local` file. `.env.local.example` is the safe template to copy if that file is missing:
 
 ```bash
-psql postgres
+cp .env.local.example .env.local
 ```
 
-Then run these commands in the `psql` prompt:
+For Vercel, do not upload `.env.local`. Instead, set the values in `.env.production.example` as the API project's Vercel Environment Variables, using a real unique `JWT_SECRET`, then redeploy. `JWT_SECRET` must remain secret; it protects the validity of login tokens.
 
-```sql
-CREATE ROLE roundrobin WITH LOGIN PASSWORD 'password123';
-CREATE DATABASE round_robin OWNER roundrobin;
-\q
-```
-
-If PostgreSQL is not available, confirm/restart its service:
-
-```bash
-brew services list
-brew services restart postgresql@16
-```
-
-## Local setup
-
-1. Copy `.env.example` to `.env`, then configure it for the local database:
-
-   ```env
-   DATABASE_URL="postgresql://roundrobin:password123@localhost:5432/round_robin?schema=public"
-   JWT_SECRET="replace-with-a-long-random-secret"
-   CLIENT_ORIGIN="http://localhost:5173"
-   PORT=3000
-   ```
-
-2. Generate Prisma's client and create tables directly from `schema.prisma`. This fresh-development setup does not create migration files:
-
-   ```bash
-   npm run prisma:generate
-   npx prisma db push
-   ```
-
-3. Start the API:
+Start the API:
 
    ```bash
    npm run dev
    ```
 
 `GET http://localhost:3000/api/health` confirms the API is running.
+
+The local server defaults to port `3000`; setting `PORT` is optional. Do not set `PORT` in Vercel, which supplies the port automatically.
 
 ## Authentication API
 
@@ -65,8 +33,12 @@ brew services restart postgresql@16
 | POST | `/api/auth/signin` | `{ "login", "password" }` |
 | GET | `/api/auth/me` | `Authorization: Bearer <accessToken>` |
 
-Sign-up/sign-in return `{ user, accessToken }`. The short-lived JWT contains only the user id in `sub`; group role and authorization should always be read from the database, so role changes take effect immediately.
+Sign-up/sign-in return `{ user, accessToken }`. Passwords are hashed before they are written to `data.json`.
+
+## Deployment note
+
+Do not rely on `data.json` for a deployed Vercel API. Vercel serverless functions do not provide durable project-file writes, so new account creation will not persist reliably. Keep this storage only for local testing; switch to PostgreSQL/Prisma or another managed database before deploying authentication for real users.
 
 ## Client integration
 
-The client login forms call the auth endpoints at `VITE_API_URL` (default: `http://localhost:3000`) and store the returned access token for the development milestone. Include `Authorization: Bearer ${token}` on protected calls. Before production, move to an httpOnly secure cookie with refresh-token rotation to reduce XSS exposure.
+Vite automatically loads `.env.development` for `npm run dev` and `.env.production` for a production build. The client therefore uses `http://localhost:3000` locally and `https://rrobin-server-git-main-rrobin.vercel.app` in Vercel production. Include `Authorization: Bearer ${token}` on protected calls.
