@@ -1,0 +1,12 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "adam",
+      "email": "omayrkazi@gmail.com",
+      "password": "$2a$10$AYkI87JEftLsdUYgLUYdyuy9hMwu0QQ682tBqv5GziNir83DxvJim",
+      "created_at": "2026-08-03T20:11:23.087Z"
+    }
+  ],
+  "nextId": 2
+}

@@ -1,22 +1,21 @@
-require('dotenv').config()
-
-const express = require('express')
-const cors = require('cors')
-const authRouter = require('./routes/auth')
+import 'dotenv/config'
+import express from 'express'
+import cors from 'cors'
+import authRouter from './auth.js'
 
 const app = express()
-const port = Number(process.env.PORT || 3000)
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }))
+const PORT = process.env.PORT || 3000
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
+
+// Allow the Vite dev server (on port 5173) to call this API.
+app.use(cors({ origin: CLIENT_ORIGIN }))
 app.use(express.json())
 
+// Quick way to check the server is alive: open http://localhost:3000/api/health
 app.get('/api/health', (req, res) => res.json({ ok: true }))
+
 app.use('/api/auth', authRouter)
 
-app.use((error, req, res, next) => {
-  console.error(error)
-  res.status(500).json({ error: 'Unexpected server error.' })
-})
-
-app.listen(port, () => {
-  console.log(`Round Robin API listening on http://localhost:${port}`)
+app.listen(PORT, () => {
+  console.log(`Round Robin API running on http://localhost:${PORT}`)
 })
