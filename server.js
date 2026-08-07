@@ -20,6 +20,13 @@ app.get('/api/health', (req, res) => res.json({ ok: true }))
 
 app.use('/api/auth', authRouter)
 
-app.listen(PORT, () => {
-  console.log(`Round Robin API running on http://localhost:${PORT}`)
-})
+// Vercel runs this file as a serverless function and calls the exported
+// app directly for each request — it never calls app.listen(). Only start
+// a real listener when running locally (or on a non-Vercel host).
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Round Robin API running on http://localhost:${PORT}`)
+  })
+}
+
+export default app
