@@ -58,6 +58,8 @@ function shapeChores(choreRows, completionRows, exclusionRows) {
       origin: c.origin,
       addedBy: c.added_by_username,
       claimedBy: c.claimed_by_username,
+      addedById: c.added_by,
+      claimedById: c.claimed_by,
       excludedDates: exclusionsByChore[c.id] || [],
       completedDates,
       // For a one-off (non-recurring) chore, "completed" means its single

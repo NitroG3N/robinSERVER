@@ -3,7 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import authRouter from './auth.js'
 import roomsRouter from './rooms.js'
-import choresRouter from './chores.js'
+import choresRouter from './choreRoutes.js'
 import tradesRouter from './trades.js'
 
 // Local values live in the ignored .env.local file. In Vercel, its dashboard
