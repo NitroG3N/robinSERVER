@@ -116,6 +116,31 @@ router.post('/:id/regenerate-code', async (req, res) => {
   }
 })
 
+// GET /api/rooms/:id/members
+// Lists everyone in a room (id + username), in the order they joined.
+// Requires the requester to actually be a member of that room.
+router.get('/:id/members', async (req, res) => {
+  const roomId = Number(req.params.id)
+  if (!Number.isInteger(roomId)) {
+    return res.status(400).json({ error: 'Invalid room id.' })
+  }
+
+  const { rows: membership } = await sql`
+    SELECT 1 FROM room_members WHERE room_id = ${roomId} AND user_id = ${req.user.id}
+  `
+  if (membership.length === 0) {
+    return res.status(403).json({ error: "You're not a member of this room." })
+  }
+
+  const { rows } = await sql`
+    SELECT users.id, users.username FROM room_members
+    JOIN users ON users.id = room_members.user_id
+    WHERE room_members.room_id = ${roomId}
+    ORDER BY room_members.joined_at ASC
+  `
+  return res.json({ members: rows })
+})
+
 // GET /api/rooms/mine
 // Lists every room the current user belongs to (owned or joined).
 router.get('/mine', async (req, res) => {
