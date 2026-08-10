@@ -38,8 +38,10 @@ async function loadOwnedChore(req, res, choreId) {
 // shape the client already expects (see src/utils/chores.js on the client).
 function shapeChores(choreRows, completionRows, exclusionRows) {
   const completionsByChore = {}
+  const completedByByChore = {}
   for (const row of completionRows) {
     ;(completionsByChore[row.chore_id] ||= {})[row.date_key] = new Date(row.completed_at).getTime()
+    ;(completedByByChore[row.chore_id] ||= {})[row.date_key] = row.completed_by_username || null
   }
   const exclusionsByChore = {}
   for (const row of exclusionRows) {
@@ -48,6 +50,7 @@ function shapeChores(choreRows, completionRows, exclusionRows) {
 
   return choreRows.map((c) => {
     const completedDates = completionsByChore[c.id] || {}
+    const completedByDates = completedByByChore[c.id] || {}
     return {
       id: c.id,
       task: c.task,
@@ -62,9 +65,14 @@ function shapeChores(choreRows, completionRows, exclusionRows) {
       claimedById: c.claimed_by,
       excludedDates: exclusionsByChore[c.id] || [],
       completedDates,
+      completedByDates,
       // For a one-off (non-recurring) chore, "completed" means its single
       // date has a completion entry.
       completedAt: !c.recurring && c.date ? completedDates[c.date] || null : null,
+      completedBy: !c.recurring && c.date ? completedByDates[c.date] || null : null,
+      // Epoch ms this chore was created — used client-side to know whether a
+      // board chore is "new since I last checked the Claim Board."
+      createdAt: c.created_at ? new Date(c.created_at).getTime() : null,
     }
   })
 }
@@ -92,8 +100,10 @@ router.get('/', async (req, res) => {
   `
 
   const { rows: completionRows } = await sql`
-    SELECT chore_completions.* FROM chore_completions
+    SELECT chore_completions.*, users.username AS completed_by_username
+    FROM chore_completions
     JOIN chores ON chores.id = chore_completions.chore_id
+    LEFT JOIN users ON users.id = chore_completions.completed_by
     WHERE chores.room_id = ${roomId}
   `
   const { rows: exclusionRows } = await sql`
@@ -187,8 +197,8 @@ router.post('/:id/complete', async (req, res) => {
   }
 
   await sql`
-    INSERT INTO chore_completions (chore_id, date_key)
-    VALUES (${chore.id}, ${dateKey})
+    INSERT INTO chore_completions (chore_id, date_key, completed_by)
+    VALUES (${chore.id}, ${dateKey}, ${req.user.id})
     ON CONFLICT (chore_id, date_key) DO NOTHING
   `
   return res.json({ ok: true })
