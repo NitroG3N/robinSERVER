@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { sql } from '@vercel/postgres'
-import { requireAuth } from './middleware.js'
+import { requireAuth } from './authMiddleware.js'
 
 const router = Router()
 
