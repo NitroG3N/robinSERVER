@@ -4,6 +4,7 @@ import cors from 'cors'
 import authRouter from './auth.js'
 import roomsRouter from './rooms.js'
 import choresRouter from './chores.js'
+import tradesRouter from './trades.js'
 
 // Local values live in the ignored .env.local file. In Vercel, its dashboard
 // provides process.env values and dotenv does not overwrite them.
@@ -23,6 +24,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true }))
 app.use('/api/auth', authRouter)
 app.use('/api/rooms', roomsRouter)
 app.use('/api/chores', choresRouter)
+app.use('/api/trades', tradesRouter)
 
 // Vercel runs this file as a serverless function and calls the exported
 // app directly for each request — it never calls app.listen(). Only start
