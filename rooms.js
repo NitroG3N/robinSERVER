@@ -85,6 +85,37 @@ router.post('/join', async (req, res) => {
   return res.json({ room })
 })
 
+// POST /api/rooms/:id/regenerate-code
+// Issues a new invite code for a room, invalidating the old one. Only the
+// room's owner can do this — anyone else gets a 403.
+router.post('/:id/regenerate-code', async (req, res) => {
+  const roomId = Number(req.params.id)
+  if (!Number.isInteger(roomId)) {
+    return res.status(400).json({ error: 'Invalid room id.' })
+  }
+
+  const { rows: roomRows } = await sql`SELECT * FROM rooms WHERE id = ${roomId}`
+  const room = roomRows[0]
+
+  if (!room) {
+    return res.status(404).json({ error: 'Room not found.' })
+  }
+  if (room.owner_id !== req.user.id) {
+    return res.status(403).json({ error: 'Only the group owner can regenerate the invite code.' })
+  }
+
+  try {
+    const newCode = await generateUniqueInviteCode()
+    const { rows } = await sql`
+      UPDATE rooms SET invite_code = ${newCode} WHERE id = ${roomId} RETURNING *
+    `
+    return res.json({ room: rows[0] })
+  } catch (err) {
+    console.error('Failed to regenerate invite code:', err)
+    return res.status(500).json({ error: 'Could not regenerate the code. Please try again.' })
+  }
+})
+
 // GET /api/rooms/mine
 // Lists every room the current user belongs to (owned or joined).
 router.get('/mine', async (req, res) => {
