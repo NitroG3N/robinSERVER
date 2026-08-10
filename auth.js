@@ -34,12 +34,12 @@ router.post('/signup', async (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 8 characters.' })
   }
 
-  if (findExistingUser(username, email)) {
+  if (await findExistingUser(username, email)) {
     return res.status(409).json({ error: 'That username or email is already taken.' })
   }
 
   const hash = await bcrypt.hash(password, 10)
-  const user = createUser({ username, email, password: hash })
+  const user = await createUser({ username, email, password: hash })
 
   return res.status(201).json({ accessToken: makeToken(user), user: publicUser(user) })
 })
@@ -53,7 +53,7 @@ router.post('/signin', async (req, res) => {
     return res.status(400).json({ error: 'Please enter your login and password.' })
   }
 
-  const user = findUserByLogin(login)
+  const user = await findUserByLogin(login)
 
   // Same generic message whether the user doesn't exist or the password is
   // wrong — avoids revealing which usernames are registered.
