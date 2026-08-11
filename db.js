@@ -1,6 +1,4 @@
 import { sql } from '@vercel/postgres'
-
-// Real persistence via Postgres. Replaces the old JSON-file approach, which couldn't survive Vercel's read-only
 // filesystem or handle multiple users reliably. I USED AI TO HELP ME WITH THIS 
 export async function findUserByLogin(login) {
   const { rows } = await sql`

@@ -16,9 +16,7 @@ async function requireMembership(req, res, roomId) {
   return true
 }
 
-// A chore's "owner" for trading purposes: whoever claimed it off the board,
-// or — for chores added straight to the calendar (which never get a
-// claimed_by) — whoever added it.
+// chore "owner" for trading purposes 
 function ownerIdOf(chore) {
   if (chore.claimed_by) return chore.claimed_by
   if (chore.origin === 'calendar') return chore.added_by

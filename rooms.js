@@ -24,7 +24,6 @@ async function generateUniqueInviteCode() {
   throw new Error('Could not generate a unique invite code, please try again.')
 }
 
-// POST /api/rooms   body: { name }
 // Creates a new room owned by the current user, and adds them as its first member 
 router.post('/', async (req, res) => {
   const name = (req.body.name || '').trim()
