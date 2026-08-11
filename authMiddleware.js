@@ -3,9 +3,6 @@ import { findUserById } from './db.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-insecure-secret'
 
-// Protects a route: requires a valid "Authorization: Bearer <token>" header
-// (the accessToken your client got back from /signup or /signin). On success,
-// attaches the logged-in user as req.user for the route handler to use.
 export async function requireAuth(req, res, next) {
   const header = req.headers.authorization || ''
   const token = header.startsWith('Bearer ') ? header.slice(7) : null

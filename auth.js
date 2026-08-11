@@ -8,7 +8,7 @@ const router = Router()
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-insecure-secret'
 const TOKEN_TTL = '7d'
 
-// Never send the password hash back to the browser.
+// avoid sending password hash
 function publicUser(user) {
   return { id: user.id, username: user.username, email: user.email }
 }
@@ -55,8 +55,7 @@ router.post('/signin', async (req, res) => {
 
   const user = await findUserByLogin(login)
 
-  // Same generic message whether the user doesn't exist or the password is
-  // wrong — avoids revealing which usernames are registered.
+  // Same generic message whether the user doesn't exist or the password is wrong etc.
   if (!user || !(await bcrypt.compare(password, user.password))) {
     return res.status(401).json({ error: 'Invalid credentials.' })
   }

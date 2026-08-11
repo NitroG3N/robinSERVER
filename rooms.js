@@ -4,8 +4,7 @@ import { requireAuth } from './authMiddleware.js'
 
 const router = Router()
 
-// Every route below runs requireAuth first, so req.user is always the
-// logged-in user making the request — never trust a userId from the body.
+// Every route below runs requireAuth first, so req.user is always the logged in user making the request
 router.use(requireAuth)
 
 // Matches the "123 456" format the client already displays.
@@ -15,9 +14,7 @@ function generateInviteCode() {
   return `${a} ${b}`
 }
 
-// Tries random codes until it finds one not already in use. Astronomically
-// unlikely to loop more than once or twice, but guards against the rare
-// collision instead of assuming it can't happen.
+// Tries random codes until it finds one not already in use.
 async function generateUniqueInviteCode() {
   for (let attempt = 0; attempt < 10; attempt++) {
     const code = generateInviteCode()
@@ -28,8 +25,7 @@ async function generateUniqueInviteCode() {
 }
 
 // POST /api/rooms   body: { name }
-// Creates a new room owned by the current user, and adds them as its first
-// member. Returns the room including its real, database-backed invite code.
+// Creates a new room owned by the current user, and adds them as its first member 
 router.post('/', async (req, res) => {
   const name = (req.body.name || '').trim()
   if (!name) {
@@ -58,8 +54,6 @@ router.post('/', async (req, res) => {
   }
 })
 
-// POST /api/rooms/join   body: { code }
-// Looks up a room by its invite code and adds the current user as a member.
 router.post('/join', async (req, res) => {
   const code = (req.body.code || '').trim()
   if (!code) {
@@ -73,9 +67,7 @@ router.post('/join', async (req, res) => {
     return res.status(404).json({ error: 'No room found with that invite code.' })
   }
 
-  // ON CONFLICT DO NOTHING: joining a room you're already in just succeeds
-  // quietly instead of erroring, since the end result the user wants
-  // ("I'm in this room") is already true.
+  // ON CONFLICT DO NOTHING
   await sql`
     INSERT INTO room_members (room_id, user_id)
     VALUES (${room.id}, ${req.user.id})
@@ -86,8 +78,7 @@ router.post('/join', async (req, res) => {
 })
 
 // POST /api/rooms/:id/regenerate-code
-// Issues a new invite code for a room, invalidating the old one. Only the
-// room's owner can do this — anyone else gets a 403.
+// Issues a new invite code for a room, invalidating the old one. Only the room owner can do this
 router.post('/:id/regenerate-code', async (req, res) => {
   const roomId = Number(req.params.id)
   if (!Number.isInteger(roomId)) {
@@ -116,9 +107,6 @@ router.post('/:id/regenerate-code', async (req, res) => {
   }
 })
 
-// GET /api/rooms/:id/members
-// Lists everyone in a room (id + username), in the order they joined.
-// Requires the requester to actually be a member of that room.
 router.get('/:id/members', async (req, res) => {
   const roomId = Number(req.params.id)
   if (!Number.isInteger(roomId)) {
@@ -141,8 +129,7 @@ router.get('/:id/members', async (req, res) => {
   return res.json({ members: rows })
 })
 
-// GET /api/rooms/mine
-// Lists every room the current user belongs to (owned or joined).
+
 router.get('/mine', async (req, res) => {
   const { rows } = await sql`
     SELECT rooms.* FROM rooms

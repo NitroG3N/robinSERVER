@@ -5,9 +5,7 @@ import { requireAuth } from './authMiddleware.js'
 const router = Router()
 router.use(requireAuth)
 
-// Confirms the current user actually belongs to a room before letting them
-// touch anything in it. Returns the room_id on success, or null (after
-// sending a response) on failure.
+// make sure user actually belongs to a room before letting them touch anything in it. Returns the room_id on success/ or null if failz
 async function requireMembership(req, res, roomId) {
   const { rows } = await sql`
     SELECT 1 FROM room_members WHERE room_id = ${roomId} AND user_id = ${req.user.id}
@@ -19,9 +17,7 @@ async function requireMembership(req, res, roomId) {
   return true
 }
 
-// Looks up a chore and confirms the current user is a member of the room it
-// belongs to. Returns the chore row on success, or null (after sending a
-// response) on failure — so route handlers can just `if (!chore) return`.
+// looks up a chore and confirms the current user is a member of the room it belongs to
 async function loadOwnedChore(req, res, choreId) {
   const { rows } = await sql`SELECT * FROM chores WHERE id = ${choreId}`
   const chore = rows[0]
@@ -34,8 +30,7 @@ async function loadOwnedChore(req, res, choreId) {
   return chore
 }
 
-// Turns the raw DB rows (chore + its completions + its exclusions) into the
-// shape the client already expects (see src/utils/chores.js on the client).
+// turns the raw DB rows into the shape the client already expects.
 function shapeChores(choreRows, completionRows, exclusionRows) {
   const completionsByChore = {}
   const completedByByChore = {}
@@ -55,7 +50,7 @@ function shapeChores(choreRows, completionRows, exclusionRows) {
       id: c.id,
       task: c.task,
       points: c.points,
-      date: c.date, // already formatted as 'YYYY-MM-DD' by the query below
+      date: c.date, // already formatted date
       recurring: c.recurring,
       intervalDays: c.interval_days,
       origin: c.origin,
@@ -66,18 +61,13 @@ function shapeChores(choreRows, completionRows, exclusionRows) {
       excludedDates: exclusionsByChore[c.id] || [],
       completedDates,
       completedByDates,
-      // For a one-off (non-recurring) chore, "completed" means its single
-      // date has a completion entry.
       completedAt: !c.recurring && c.date ? completedDates[c.date] || null : null,
       completedBy: !c.recurring && c.date ? completedByDates[c.date] || null : null,
-      // Epoch ms this chore was created — used client-side to know whether a
-      // board chore is "new since I last checked the Claim Board."
       createdAt: c.created_at ? new Date(c.created_at).getTime() : null,
     }
   })
 }
 
-// GET /api/chores?roomId=123
 router.get('/', async (req, res) => {
   const roomId = Number(req.query.roomId)
   if (!Number.isInteger(roomId)) {
@@ -115,10 +105,6 @@ router.get('/', async (req, res) => {
   return res.json({ chores: shapeChores(choreRows, completionRows, exclusionRows) })
 })
 
-// POST /api/chores   body: { roomId, task, points, date, recurring, intervalDays, origin }
-// origin: 'calendar' (added straight to the calendar, visible to everyone
-// immediately) or 'board' (posted to the Claim Board, unclaimed and
-// invisible on the calendar until someone claims it).
 router.post('/', async (req, res) => {
   const roomId = Number(req.body.roomId)
   const task = (req.body.task || '').trim()
@@ -174,7 +160,7 @@ router.post('/:id/unclaim', async (req, res) => {
 })
 
 // POST /api/chores/:id/schedule   body: { date }
-// Assigns a date to a claimed-but-undated ("loose") chore.
+// assign a date to a claimed loose chore.
 router.post('/:id/schedule', async (req, res) => {
   const chore = await loadOwnedChore(req, res, Number(req.params.id))
   if (!chore) return
@@ -204,9 +190,7 @@ router.post('/:id/complete', async (req, res) => {
   return res.json({ ok: true })
 })
 
-// POST /api/chores/:id/exclude   body: { dateKey }
-// Removes a single occurrence of a (usually recurring) chore without
-// completing it or deleting the whole series.
+// removes a single occurrence of a chore without completing it/deleting series
 router.post('/:id/exclude', async (req, res) => {
   const chore = await loadOwnedChore(req, res, Number(req.params.id))
   if (!chore) return
